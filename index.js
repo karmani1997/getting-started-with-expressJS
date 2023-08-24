@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const port = 3000
+process.env.NODE_ENV='production'
 
 // Middleware to parse JSON and URL-encoded bodies
 app.use(express.json());
@@ -37,16 +38,23 @@ const responseLoggingMiddleware = (req, res, next) => {
 //       res.status(500).send('Internal Server Error');
 //     }
 //   };
-function errorHandler (err, req, res, next) {
-    res.status(500)
-    res.render('error', { error: err })
+function errorHandler(err, req, res, next) {
+    console.error('An error occurred:', err);
+  
+    // Set the response status to 500 Internal Server Error
+    res.status(500);
+  
+    // Return a JSON error response
+    res.json({
+      error: {
+        message: err.message || 'An error occurred',
+        stack: process.env.NODE_ENV === 'production' ? 'Error details are not available in production.' : err.stack
+      }
+    });
   }
 
 app.use(requestLoggingMiddleware); 
-
 app.use(responseLoggingMiddleware); 
-app.use(errorHandler);
-
 
 
 let users = [{
@@ -99,9 +107,8 @@ app.delete('/users/:id', (req, res) => {
     res.send(users)
 })
 
+app.use(errorHandler);
 
-
-  
 
 
 app.listen(port, () => {
